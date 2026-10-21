@@ -6,3 +6,5 @@ dist/
 .env.local
 .env.*.local
 gha-creds-*.json
+# File export cá nhân (billing, credits...) — không đưa lên GitHub
+*.csv
