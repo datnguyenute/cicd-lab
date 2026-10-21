@@ -16,6 +16,6 @@ export class TodosService {
   async toggle(ownerUid: string, id: string) {
     const todo = await this.prisma.todo.findFirst({ where: { id, ownerUid } });
     if (!todo) throw new NotFoundException('Todo not found');
-    return this.prisma.todo.update({ where: { id }, data: { done: true } });
+    return this.prisma.todo.update({ where: { id }, data: { done: !todo.done } });
   }
 }
