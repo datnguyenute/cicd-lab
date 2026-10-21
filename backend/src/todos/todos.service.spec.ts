@@ -29,6 +29,12 @@ describe('TodosService', () => {
     expect(prisma.todo.update).toHaveBeenCalledWith({ where: { id: 't1' }, data: { done: true } });
   });
 
+  it('toggles a done todo back to not done', async () => {
+    prisma.todo.findFirst.mockResolvedValue({ id: 't1', done: true });
+    await service.toggle('user-1', 't1');
+    expect(prisma.todo.update).toHaveBeenCalledWith({ where: { id: 't1' }, data: { done: false } });
+  });
+
   it('throws when toggling a todo of another user', async () => {
     prisma.todo.findFirst.mockResolvedValue(null);
     await expect(service.toggle('user-2', 't1')).rejects.toBeInstanceOf(NotFoundException);
