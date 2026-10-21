@@ -1,0 +1,24 @@
+# Merge develop → main → tự động deploy TEST (môi trường QA/UAT)
+name: Deploy TEST
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: test
+    permissions:
+      contents: read
+      id-token: write

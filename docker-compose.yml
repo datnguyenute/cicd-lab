@@ -1,0 +1,53 @@
+# Chạy toàn bộ hệ thống ở local giống trên Cloud: `docker compose up --build`
+#   FE: http://localhost:3000   BE: http://localhost:8080/health   DB: localhost:5433
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    # host 5433 → container 5432 (tránh đụng Postgres đã cài sẵn trên máy)
+    ports: ["5433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 3s
+      retries: 20
+
+  # Giống Cloud Run Job trên cloud: chạy migration 1 lần rồi thoát
+  migrate:
+    build: ./backend
+    command: ["npx", "prisma", "migrate", "deploy"]
+    environment:
+      DATABASE_URL: postgresql://app:app@db:5432/app
+    depends_on:
+      db: { condition: service_healthy }
+
+  backend:
+    build:
+      context: ./backend
+      args: { APP_VERSION: local-compose }
+    environment:
+      DATABASE_URL: postgresql://app:app@db:5432/app
+      APP_ENV: local
+      AUTH_DISABLED: "true"
+      CORS_ORIGINS: http://localhost:3000
+    ports: ["8080:8080"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Trình duyệt gọi API → dùng localhost chứ không phải tên service "backend"
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+        NEXT_PUBLIC_AUTH_DISABLED: "true"
+        NEXT_PUBLIC_APP_ENV: local
+        NEXT_PUBLIC_APP_VERSION: local-compose
+    ports: ["3000:8080"]
+    depends_on: [backend]
+
+volumes:
+  pgdata:

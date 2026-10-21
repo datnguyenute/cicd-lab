@@ -1,0 +1,35 @@
+# Tạo tag vX.Y.Z trên main → chờ người duyệt (Environment "prod" có Required reviewers) → deploy PROD
+name: Deploy PROD
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Tag phải nằm trên main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::Tag $GITHUB_REF_NAME không nằm trên main — từ chối deploy prod"; exit 1; }
+
+  ci:
+    needs: guard
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: prod
+    permissions:
+      contents: read
+      id-token: write

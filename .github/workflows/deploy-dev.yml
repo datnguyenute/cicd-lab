@@ -1,0 +1,25 @@
+# Merge vào develop → tự động deploy DEV
+name: Deploy DEV
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+# Không cho 2 lần deploy cùng môi trường chạy song song; không huỷ lần đang chạy
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: dev
+    permissions:
+      contents: read
+      id-token: write

@@ -1,0 +1,21 @@
+generator client {
+  provider      = "prisma-client-js"
+  // "debian-openssl-3.0.x" = engine cho image node:22-slim chạy trên Cloud Run
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Todo {
+  id        String   @id @default(uuid())
+  title     String
+  done      Boolean  @default(false)
+  ownerUid  String   @map("owner_uid") // Firebase UID của người tạo
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ownerUid])
+  @@map("todos")
+}
